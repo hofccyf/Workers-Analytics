@@ -43,12 +43,12 @@ function 格式化流量(bytes) {
 // ── CF GraphQL Analytics (日/周/月 全维度满载查询) ───────────
 async function 拉取单账号CF统计(account) {
   const { label, id: accountId, token, email, worker } = account;
-  if (!accountId || !token || !worker) return null;
+  if (!accountId || !token || !worker) return { 失败: true };
 
   const 目标脚本 = [worker];
   const 现在 = new Date();
   
-// 以 UTC 时间（北京时间早8点）为基准的自然日、周、月
+  // 以 UTC 时间（北京时间早8点）为基准的自然日、周、月
   const y = 现在.getUTCFullYear();
   const m = 现在.getUTCMonth();
   const d = 现在.getUTCDate();
@@ -106,13 +106,10 @@ async function 拉取单账号CF统计(account) {
       body: JSON.stringify({ query }),
     });
     
-    if (!res.ok) return { 数据: 统计, 查询时间: 现在.toISOString() };
+    // 【关键修复】如果遭遇 CF 接口限流或超时，直接抛出失败标志，不返回 0
+    if (!res.ok) return { 失败: true };
     const json = await res.json();
-    if (json.errors) {
-       统计[`[${label}] ⚠️ 密钥/权限错误`] = 统计[name];
-       delete 统计[name];
-       return { 数据: 统计, 查询时间: 现在.toISOString() };
-    }
+    if (json.errors) return { 失败: true };
 
     const accountData = json?.data?.viewer?.accounts?.[0];
     
@@ -144,31 +141,52 @@ async function 拉取单账号CF统计(account) {
 
     return { 数据: 统计, 查询时间: 现在.toISOString() };
   } catch { 
-    return { 数据: 统计, 查询时间: 现在.toISOString() }; 
+    // 【关键修复】网络被强杀时，返回失败标志
+    return { 失败: true }; 
   }
 }
 
-async function 拉取CF统计() {
+async function 拉取CF统计(上次数据) {
+  if (!CF_ACCOUNTS || CF_ACCOUNTS.length === 0) return null;
   const 验证账号 = CF_ACCOUNTS.filter(a => a.id && a.token);
   if (验证账号.length === 0) return null;
-  const 综合统计 = {};
+  
+  // 【关键修复】用上一次的 KV 旧数据打底，拉取失败的账号将直接显示旧数据，绝不填 0
+  const 综合统计 = 上次数据 || {};
   let 最晚查询时间 = null;
 
-  // 顺序排队查询，防止 1101 并发限制报错
-  for (const account of 验证账号) {
-    const res = await 拉取单账号CF统计(account);
-    if (res && res.数据) {
-      Object.assign(综合统计, res.数据);
-      最晚查询时间 = res.查询时间;
+  // 【关键修复】3 个账号为一组并发拉取，将总耗时缩短 3 倍，彻底告别 Cron 超时强杀
+  for (let i = 0; i < 验证账号.length; i += 3) {
+    const batch = 验证账号.slice(i, i + 3);
+    const results = await Promise.all(batch.map(acc => 拉取单账号CF统计(acc)));
+    
+    for (const res of results) {
+      // 只有明确成功拉取到数据的账号，才更新覆盖进去；失败的账号原样不动
+      if (res && res.数据 && !res.失败) {
+        Object.assign(综合统计, res.数据);
+        最晚查询时间 = res.查询时间;
+      }
     }
   }
+  
   if (Object.keys(综合统计).length === 0) return null;
   return { 数据: 综合统计, 查询时间: 最晚查询时间 || new Date().toISOString() };
 }
 
 // ── 核心定时任务 ──────────────────────────────────────────────
 async function 执行巡检(kv) {
-  const cf统计 = await 拉取CF统计();
+  let 上次数据 = {};
+  try {
+    // 【关键修复】在执行巡检前，先把 KV 里的老底子抽出来
+    const rawCF = await kv.get('cf_stats');
+    if (rawCF) {
+       const parsed = JSON.parse(rawCF);
+       上次数据 = parsed.数据 || parsed;
+    }
+  } catch {}
+
+  // 带着老底子去拉取新数据
+  const cf统计 = await 拉取CF统计(上次数据);
   if (cf统计) {
     await kv.put('cf_stats', JSON.stringify(cf统计), { expirationTtl: 3600 });
     await kv.put('last_check', new Date().toISOString(), { expirationTtl: 3600 });
@@ -369,7 +387,7 @@ code { padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 
 
 export default {
   async scheduled(event, env, ctx) {
-    await(执行巡检(env.NODE_MONITOR));
+    await 执行巡检(env.NODE_MONITOR);
   },
   async fetch(req, env) {
     const url = new URL(req.url);
