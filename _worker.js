@@ -369,7 +369,7 @@ code { padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(执行巡检(env.NODE_MONITOR));
+    await(执行巡检(env.NODE_MONITOR));
   },
   async fetch(req, env) {
     const url = new URL(req.url);
