@@ -196,6 +196,8 @@ async function 执行巡检(kv) {
 // ── 看板渲染 ─────────────────────────────────────────────────
 function 生成看板(上次检查时间, cf统计数据 = null) {
   let sumReq = 0, sumTraffic = 0, sumErr = 0;
+  let sumReqW = 0, sumTrafficW = 0, sumErrW = 0;
+  let sumReqM = 0, sumTrafficM = 0, sumErrM = 0;
   const 脚本总数 = cf统计数据 ? Object.keys(cf统计数据).length : 0;
   
   let cf统计模块 = '';
@@ -214,6 +216,12 @@ function 生成看板(上次检查时间, cf统计数据 = null) {
       sumReq += v.日请求 || 0;
       sumTraffic += v.日流量 || 0;
       sumErr += v.日错误 || 0;
+      sumReqW += v.周请求 || 0;
+      sumTrafficW += v.周流量 || 0;
+      sumErrW += v.周错误 || 0;
+      sumReqM += v.月请求 || 0;
+      sumTrafficM += v.月流量 || 0;
+      sumErrM += v.月错误 || 0;
 
       cf行 += '<tr>' +
         '<td><code style="background:var(--color-surface-2)">' + name + '</code></td>' +
@@ -346,19 +354,19 @@ code { padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 
       <div class="summary-sub">已配置的有效账号</div>
     </div>
     <div class="summary-card">
-      <div class="summary-label">今日总请求数</div>
+      <div class="summary-label">总请求数</div>
       <div class="summary-value" style="color:var(--color-primary)">${sumReq.toLocaleString()}</div>
-      <div class="summary-sub">最近24小时累计请求</div>
+      <div class="summary-sub">今日 &nbsp;|&nbsp; 本周 ${sumReqW.toLocaleString()} &nbsp;|&nbsp; 本月 ${sumReqM.toLocaleString()}</div>
     </div>
     <div class="summary-card">
-      <div class="summary-label">今日总消耗流量</div>
+      <div class="summary-label">总消耗流量</div>
       <div class="summary-value" style="color:#a78bfa">${格式化流量(sumTraffic)}</div>
-      <div class="summary-sub">最近24小时出网流量</div>
+      <div class="summary-sub">今日 &nbsp;|&nbsp; 本周 ${格式化流量(sumTrafficW)} &nbsp;|&nbsp; 本月 ${格式化流量(sumTrafficM)}</div>
     </div>
     <div class="summary-card">
-      <div class="summary-label">今日总异常数</div>
+      <div class="summary-label">总异常数</div>
       <div class="summary-value" style="color:${sumErr > 0 ? 'var(--color-error)' : 'var(--color-success)'}">${sumErr.toLocaleString()}</div>
-      <div class="summary-sub">脚本崩溃及内存溢出统计</div>
+      <div class="summary-sub">今日 &nbsp;|&nbsp; 本周 ${sumErrW.toLocaleString()} &nbsp;|&nbsp; 本月 ${sumErrM.toLocaleString()}</div>
     </div>
   </div>
 
