@@ -14,5 +14,6 @@ CF控制台的设置里添加触发事件，Cron触发器按需添加计划
 
 跟随cloudflare策略，北京时间每日8点清零
 
-<img width="1388" height="855" alt="image" src="https://github.com/user-attachments/assets/85d9b119-1453-442f-890e-aafeffb05cae" />
+<img width="1358" height="819" alt="image" src="https://github.com/user-attachments/assets/71d643d1-3082-4c42-816e-1a3603692f92" />
+
 
