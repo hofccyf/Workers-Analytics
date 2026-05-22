@@ -1,5 +1,5 @@
 // ============================================================
-// Cloudflare Workers 流量与请求监控大屏 (纯净报表版)
+// Workers Analytics--Cloudflare 项目监测中心
 // ============================================================
 // 【配置区】
 const 监控密码 = 'admin888';  // 看板访问密码（GET ?pw=admin888）
@@ -266,7 +266,7 @@ function 生成看板(上次检查时间, cf统计数据 = null) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Workers 流量大屏</title>
+<title>Cloudflare 项目监测中心</title>
 <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -329,7 +329,7 @@ code { padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 
 <header class="header">
   <div class="logo">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M9 21V9" stroke="currentColor" stroke-width="2"/></svg>
-    Workers Analytics
+    Cloudflare 项目监测系统
   </div>
   <div class="status-bar">
     <div class="pulse"></div>
@@ -415,7 +415,7 @@ export default {
         </style></head>
         <body><form method="get"><div class="box">
           <div style="font-size:22px;font-weight:700;margin-bottom:8px">📊 Workers Analytics</div>
-          <div style="font-size:13px;color:#94a3b8;margin-bottom:24px">脚本数据监控大屏</div>
+          <div style="font-size:13px;color:#94a3b8;margin-bottom:24px">Cloudflare 项目监测中心</div>
           <input name="pw" type="password" placeholder="请输入安全访问密码">
           <button type="submit">进入看板</button>
         </div></form></body></html>`,
